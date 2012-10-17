@@ -45,7 +45,7 @@ define("api",default="http://api.lytics.io",type=str,help="api url")
 define("key",default="",type=str,help="Lytics.io api access token key for api (mandatory) or use LIOKEY env")
 define("aid",default="",type=str,help="Lytics.io account id (mandatory) or use LIOAID env ")
 define("dbhost",default="localhost",type=str,help="mysql db host")
-define("db",default="rootpwd",type=str,help="db name")
+define("db",default="test",type=str,help="db name to connect to")
 define("config",default=".lytics",type=str,help="config file")
 define("v",default=False,type=bool,help="verbose?")
 
@@ -166,7 +166,7 @@ class clcmd(object):
 
     def hello(self):
         print "hello"
-    
+
     def setconfig(self,name,value):
         """
         Set a configuration setting:
@@ -183,7 +183,7 @@ class clcmd(object):
         this is an event 
         """
         http = HTTPClient()
-        url = options.api +"/c/%s?key=%s" % (options.aid,options.token)
+        url = options.api +"/c/%s?key=%s" % (options.aid,options.key)
         data = json.dumps(rawdata)
         #log.debug(url)
         #log.debug(data)
@@ -216,15 +216,32 @@ class clcmd(object):
                 break
 
             line = line.strip()
+            #print line
             if line[:1] == ";":
-                queries.append(sqlstr + " " + line)
+                sqlstr = sqlstr + " " + line
+                #print("SQLSTR = %s" % (sqlstr))
+                queries.append(sqlstr)
                 sqlstr = ''
             elif len(line) > 2:
                 sqlstr += " " + line
+            else:
+                log.debug("ELSE %s" % (line))
+        if len(sqlstr) > 0 :
+            queries.append(sqlstr)
 
+        #print queries
         for sql in queries:
             for row in db.query(sql):
-                rows.append(row)
+                newrow = {}
+                for col, colval in row.iteritems():
+                    #print col, colval
+                    if type(colval) == datetime.datetime:
+                        #print("is datetime %s" % (colval))
+                        newrow[col] = time.mktime(colval.timetuple())
+                    else:
+                        #print("type = %s" % (type(colval)))
+                        newrow[col] = colval
+                rows.append(newrow)
                 if len(rows) > BATCH_SIZE :
                     self.sendjson(rows)
         

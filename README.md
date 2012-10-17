@@ -52,7 +52,7 @@ Creates a *.lytics* file in current folder
 
     lytics setconfig key myapikey
 
-Also, there are two environment varials that can be used
+Also, there are two environment variabls that can be used instead of configuration file setings or arguments.
     
     LIOAID # aid
 
