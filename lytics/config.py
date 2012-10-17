@@ -8,6 +8,9 @@ conf_file = None
 config_lines = []
 
 def setConfig(name,value):
+    """Given a name/value pair, sets or updates in 
+    config file (.lytics of cur dir)
+    """
     lines, found = [], False
     log.debug("SETCONFIG   %s:%s" %(name,value))
     def setConfLine():

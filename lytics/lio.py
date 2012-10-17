@@ -42,8 +42,8 @@ import config
 
 
 define("api",default="http://api.lytics.io",type=str,help="api url")
-define("key",default="xxxx",type=str,help="Lytics.io api access token key for api")
-define("aid",default="xxxx",type=str,help="Lytics.io account id")
+define("key",default="",type=str,help="Lytics.io api access token key for api (mandatory) or use LIOKEY env")
+define("aid",default="",type=str,help="Lytics.io account id (mandatory) or use LIOAID env ")
 define("dbhost",default="localhost",type=str,help="mysql db host")
 define("db",default="rootpwd",type=str,help="db name")
 define("config",default=".lytics",type=str,help="config file")
@@ -70,6 +70,12 @@ except:
     pass
 
 try:
+    aid = os.environ["LIOAID"]
+    if len(aid) > 0:
+        options.aid = aid
+except:
+    pass
+try:
     apistr = os.environ["LIOAPI"]
     if len(apistr) > 0:
         #options.api = "http://localhost:8133"
@@ -82,7 +88,7 @@ log = logging.getLogger("lytics")
 APIAGENT = "LioCLI"
 BATCH_SIZE = 50
 
-console.grab_console()
+#console.grab_console()
 config.openConfig()
 
 
@@ -154,12 +160,13 @@ class clcmd(object):
         syncq(file)
 
     def showconfig(self):
+        "Show the config settings"
         for n in options:
             print "%s=%s" % (n,options[n].value())
 
     def hello(self):
         print "hello"
-
+    
     def setconfig(self,name,value):
         """
         Set a configuration setting:
@@ -169,17 +176,17 @@ class clcmd(object):
         # write out config file
         config.setConfig(name,value)
 
-    def sendjson(self,command,rawdata):
+    def sendjson(self,rawdata):
         """
         sends the data to collection servers via http
 
         this is an event 
         """
         http = HTTPClient()
-        url = options.api_url +"/" + command +"/%s?key=%s" % (options.aid,options.token)
+        url = options.api +"/c/%s?key=%s" % (options.aid,options.token)
         data = json.dumps(rawdata)
-        #print(url)
-        #print(data)
+        #log.debug(url)
+        #log.debug(data)
         response = http.fetch(url, 
             method="POST", body=data, headers={'user-agent':APIAGENT},
             request_timeout=60,connect_timeout=60)
@@ -189,19 +196,40 @@ class clcmd(object):
         """
         read info from a database table and send to lio.   
 
-        lytics --dbhost=localhost db=mydbname --aid=123456 --token=mysecret db root rootpwd
+        lytics --dbhost=localhost db=mydbname --aid=123456 --key=mysecret db root rootpwd
         """
         db = database.Connection(options.dbhost, options.db, user=username, password=pwd)
         rows = []
-        sql = "SELECT email, id as user_id FROM user"
+        queries = []
+        #sql = "SELECT email, id as user_id FROM user"
         #sql = "SELECT email, id as user_id FROM user where last_update > CURRENT_TIMESTAMP - 10000"
-        for row in db.query(sql):
-            rows.append(row)
-            if len(rows) > BATCH_SIZE :
-                self.sendjson("cd", rows)
+        # for each line from stdin
+        done = False
+        sqlstr = ''
+        while not done:
+            try:
+                line = sys.stdin.readline()
+            except KeyboardInterrupt:
+                break
+
+            if not line:
+                break
+
+            line = line.strip()
+            if line[:1] == ";":
+                queries.append(sqlstr + " " + line)
+                sqlstr = ''
+            elif len(line) > 2:
+                sqlstr += " " + line
+
+        for sql in queries:
+            for row in db.query(sql):
+                rows.append(row)
+                if len(rows) > BATCH_SIZE :
+                    self.sendjson(rows)
         
         if len(rows) > 0 :
-            self.sendjson("cd", rows)
+            self.sendjson(rows)
 
     def collect(self):
         """posts arbitrary data for collection (json or name/value)
@@ -213,7 +241,7 @@ class clcmd(object):
         if len(options.key) < 1 or len(options.aid) < 1:
             options.print_help()
             raise Error('Aid and key are required')
-        print("""You can start sending data by typing it in, format as QS nv pairs, or valid json""")
+        #print("""You can start sending data by typing it in, format as QS nv pairs, or valid json""")
         http = HTTPClient()
         jsondata = None
         line = ""
@@ -239,12 +267,10 @@ class clcmd(object):
                 #data = urllib.urlencode(jsondata)
                 data = line
             else:
-                # nv pairs:  p.name=nodejs&p.category=node.js&p.id=123
                 data = line
                 url = options.api + "/c/%s?key=" % options.aid
             
-            #print(url)
-            print("'%s'" % (data))
+            log.debug("SENDING '%s'" % (data))
             response = http.fetch(url, 
                 method="POST", body=data, headers={'user-agent':APIAGENT},
                 request_timeout=60,connect_timeout=60)
