@@ -15,7 +15,8 @@ This allows collection of 2 general types of data
 example::
     
     # start an interactive command line to type in name=value pairs for collection
-    lytics --aid=123456  --token=mysecret collect
+    lytics --aid=123456  --key=myapikey collect
+    >myname=value&name2=value2
 
     # tail a file, sending each new entry written
     tail -F myfile.log | lytics --aid=123456 --key=mysecret collect
