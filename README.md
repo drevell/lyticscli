@@ -11,6 +11,7 @@ This allows collection of 2 general types of data
 
 2.  Entity Data:   Information about a user, company, etc.
 
+examples:
     
     # start an interactive command line to type in name=value pairs for collection
     # sends one request per line
@@ -27,6 +28,7 @@ This allows collection of 2 general types of data
 
     # read from a database table and send one entry per row
     lytics db username pwd < myscript.sql 
+
 
 Management
 =======================
@@ -51,7 +53,7 @@ Creates a *.lytics* file in current folder
     lytics setconfig key myapikey
 
 Also, there are two environment varials that can be used
-	
-	LIOAID # aid
+    
+    LIOAID # aid
 
-	LIOKEY # api key
+    LIOKEY # api key
