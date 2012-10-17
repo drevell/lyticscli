@@ -32,7 +32,7 @@ Management
 =======================
 Manage your queries (analysis)
 
-::
+
     
     # sync the qry.txt files to the api
     lytics setconfig key yourkey
