@@ -28,17 +28,16 @@ example::
 
 """
 import re, sys, json, datetime, time, random, urllib, os, logging
-from threading import Thread
-from pprint import pprint as pp
 import requests
 import tornado
-from tornado import ioloop
 from tornado import database
 from tornado.options import options, define
 from tornado.httpclient import HTTPClient
 
-import console
 import config
+import csvupload
+import qry
+import db
 
 
 define("api",default="http://api.lytics.io",type=str,help="api url")
@@ -93,55 +92,20 @@ config.openConfig()
 
 
 
-def syncq(name):
-    """
-    Sync a raw text query file
-    """
-    base = os.getcwd()
-    file = os.path.abspath("%s/%s" % (base,name))
-    if len(options.key) < 10:
-        log.error("MUST HAVE KEY key=%s" % (options.key))
-        return
-    #print("opening query file %s" % file)
-    try:
-        qf = open(file, 'r')
-        ql = []
-        txt = ""
-        for line in qf:
-            #line = line.replace("\n","")
-            #log.info(line)
-            if len(line) > 0 and line[0] == "#":
-                pass
-            elif len(line) > 1:
-                txt += " " + line
-            else:
-                if len(txt) > 3:
-                    ql.append(txt.strip())
-                    txt = ""
-        if len(txt) > 3:
-            ql.append(txt)
-        log.info(len(ql))
-        #log.warn(ql)
-        url = '%s/api/query?key=%s' % (options.api, options.key)
-        log.warn("connecting to %s" % (url))
-        payload = []
-        for q in ql:
-            payload.append({'peg': q, "idx":0})
-        headers = {'content-type': 'application/json'}
-        r = requests.post(url, data=json.dumps(payload), headers=headers)
-        try:
-            jsdata = json.loads(r.text)
-            print(json.dumps(jsdta, sort_keys=True, indent=2))
-        except Exception, e:
-            log.error(e)
-        
-
-    except Exception, e:
-        log.error(e)
-
-    
-
 class clcmd(object):
+
+    def valid(self):
+        ret = True
+        if len(options.key) < 10:
+            log.error("MUST HAVE KEY key=%s" % (options.key))
+            ret = False
+        elif len(options.api) < 4:
+            log.error("MUST HAVE API api=%s" % (options.api))
+            ret = False
+        #elif len(options.aid) < 1:
+        #    log.error("MUST HAVE AID aid=%s" % (options.aid))
+        #    ret = False
+        return ret
 
     def help(self):
         "print help documentation"
@@ -155,9 +119,21 @@ class clcmd(object):
         """
         Sync a raw text query file:
 
-            lytics --key="yourkey" syncq file.txt
+            lytics syncq qry.txt
         """
-        syncq(file)
+        if self.valid():
+            qry.syncq(self, file)
+
+    def csv(self,file,stream=None):
+        """
+        Sync a raw csv file:
+
+            lytics csv file.csv
+
+            # optional stream name
+            lytics csv file.csv streamName
+        """
+        csvupload.csvupload(self, file)
 
     def showconfig(self):
         "Show the config settings"
@@ -179,75 +155,30 @@ class clcmd(object):
     def sendjson(self,rawdata):
         """
         sends the data to collection servers via http
-
-        this is an event 
         """
         http = HTTPClient()
-        url = options.api +"/c/%s?key=%s" % (options.aid,options.key)
+        url = ""
+        if len(options.aid) > 0:
+            url = options.api +"/c/%s" % (options.aid)
+        elif len(options.key) > 0:
+            url = options.api +"/c/%s" % (options.key)
         data = json.dumps(rawdata)
-        #log.debug(url)
+        log.debug(url)
         #log.debug(data)
         response = http.fetch(url, 
             method="POST", body=data, headers={'user-agent':APIAGENT},
             request_timeout=60,connect_timeout=60)
         print response
     
-    def db(self,username,pwd):
+    def db(self,username,pwd=""):
         """
         read info from a database table and send to lio.   
 
-        lytics --dbhost=localhost db=mydbname --aid=123456 --key=mysecret db root rootpwd
+        lytics --dbhost=localhost --db=mydbname --aid=123456 --key=mysecret db root rootpwd
         """
-        db = database.Connection(options.dbhost, options.db, user=username, password=pwd)
-        rows = []
-        queries = []
-        #sql = "SELECT email, id as user_id FROM user"
-        #sql = "SELECT email, id as user_id FROM user where last_update > CURRENT_TIMESTAMP - 10000"
-        # for each line from stdin
-        done = False
-        sqlstr = ''
-        while not done:
-            try:
-                line = sys.stdin.readline()
-            except KeyboardInterrupt:
-                break
-
-            if not line:
-                break
-
-            line = line.strip()
-            #print line
-            if line[:1] == ";":
-                sqlstr = sqlstr + " " + line
-                #print("SQLSTR = %s" % (sqlstr))
-                queries.append(sqlstr)
-                sqlstr = ''
-            elif len(line) > 2:
-                sqlstr += " " + line
-            else:
-                log.debug("ELSE %s" % (line))
-        if len(sqlstr) > 0 :
-            queries.append(sqlstr)
-
-        #print queries
-        for sql in queries:
-            for row in db.query(sql):
-                newrow = {}
-                for col, colval in row.iteritems():
-                    #print col, colval
-                    if type(colval) == datetime.datetime:
-                        #print("is datetime %s" % (colval))
-                        newrow[col] = time.mktime(colval.timetuple())
-                    else:
-                        #print("type = %s" % (type(colval)))
-                        newrow[col] = colval
-                rows.append(newrow)
-                if len(rows) > BATCH_SIZE :
-                    self.sendjson(rows)
+        if self.valid():
+            db.senddb(self,username,pwd)
         
-        if len(rows) > 0 :
-            self.sendjson(rows)
-
     def collect(self):
         """posts arbitrary data for collection (json or name/value)
 
