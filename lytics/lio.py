@@ -46,6 +46,7 @@ define("aid",default="",type=str,help="Lytics.io account id (mandatory) or use L
 define("dbhost",default="localhost",type=str,help="mysql db host")
 define("db",default="test",type=str,help="db name to connect to")
 define("config",default=".lytics",type=str,help="config file")
+define("stream",default="default",type=str,help="Stream to send this data to")
 define("v",default=False,type=bool,help="verbose?")
 
 
@@ -159,9 +160,9 @@ class clcmd(object):
         http = HTTPClient()
         url = ""
         if len(options.aid) > 0:
-            url = options.api +"/c/%s" % (options.aid)
+            url = options.api +"/c/%s/%s" % (options.aid, options.stream)
         elif len(options.key) > 0:
-            url = options.api +"/c/%s" % (options.key)
+            url = options.api +"/c/%s/%s" % (options.key, options.stream)
         data = json.dumps(rawdata)
         log.debug(url)
         #log.debug(data)
@@ -178,7 +179,7 @@ class clcmd(object):
         """
         if self.valid():
             db.senddb(self,username,pwd)
-        
+    
     def collect(self):
         """posts arbitrary data for collection (json or name/value)
 
@@ -194,7 +195,7 @@ class clcmd(object):
         jsondata = None
         line = ""
         data = None
-        url = options.api + "/c/%s?key=%s" % (options.aid, options.key)
+        url = options.api  + "/c/%s/%s?key=%s" % (options.aid, options.stream, options.key)
 
         # for each line from stdin
         while 1:
@@ -216,7 +217,7 @@ class clcmd(object):
                 data = line
             else:
                 data = line
-                url = options.api + "/c/%s?key=" % options.aid
+                url = options.api + "/c/%s/%s?key=" % (options.aid,options.stream)
             
             log.debug("SENDING '%s'" % (data))
             response = http.fetch(url, 

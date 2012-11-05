@@ -8,6 +8,11 @@ Installation
     
     pip install lytics
 
+    # if you don't have Pip install it
+    curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+    python get-pip.py
+    # or apt-get install python-pip on debian
+
 Data collection
 ---------------------
 This allows collection of 2 general types of data
