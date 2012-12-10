@@ -116,6 +116,12 @@ class clcmd(object):
             if p[:1] != "_":
                 print("%s  %s" % (p,getattr(self,p).__doc__ or ""))
 
+    def http(self,file):
+        """
+        test out the http 
+        """
+        pass 
+
     def syncq(self,file):
         """
         Sync a raw text query file:
@@ -125,14 +131,14 @@ class clcmd(object):
         if self.valid():
             qry.syncq(self, file)
 
-    def csv(self,file,stream=None):
+    def csv(self,file):
         """
-        Sync a raw csv file:
+        Read a csv file and upload to lytics:
 
             lytics csv file.csv
 
             # optional stream name
-            lytics csv file.csv streamName
+            lytics --stream=streamName csv file.csv 
         """
         csvupload.csvupload(self, file)
 
@@ -146,7 +152,7 @@ class clcmd(object):
 
     def setconfig(self,name,value):
         """
-        Set a configuration setting:
+        Set a configuration setting for given parameter:
 
             lytics setconfig name value
         """

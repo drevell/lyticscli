@@ -23,12 +23,19 @@ def syncq(cli, name):
         qf = open(file, 'r')
         ql = []
         txt = ""
+        inComment = False
         for line in qf:
-            #line = line.replace("\n","")
+            #line = line.strip()
             #log.info(line)
-            if len(line) > 0 and line[0] == "#":
+            if len(line) > 1 and line[0:2] == "/*":
+                inComment = True
+                txt += line
+            elif len(line) > 1 and line[0:2] == "*/":
+                inComment = False
+                txt += line
+            elif len(line) > 0 and line[0] == "#":
                 pass
-            elif len(line) > 1:
+            elif len(line) > 1 or inComment:
                 txt += " " + line
             else:
                 if len(txt) > 3:
@@ -43,6 +50,7 @@ def syncq(cli, name):
         payload = []
         for q in ql:
             payload.append({'peg': q, "idx":0})
+            #log.info(q)
         headers = {'content-type': 'application/json'}
         r = requests.post(url, data=json.dumps(payload), headers=headers)
         try:

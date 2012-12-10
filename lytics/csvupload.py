@@ -6,7 +6,7 @@ from tornado.options import options
 
 log = logging.getLogger("lytics")
 
-def csvupload(cli, name, streamName=None):
+def csvupload(cli, name):
     """
     Sync a raw text csv file
     """
@@ -25,7 +25,8 @@ def csvupload(cli, name, streamName=None):
         log.debug(rd)
         jdata.append(rd)
 
-    url = '%s/c/%s' % (options.api, options.key)
+    url = '%s/c/%s/%s' % (options.api, options.key, options.stream)
+
     log.warn("connecting to %s rowct=%d" % (url,len(jdata)))
     r = requests.post(url, data=json.dumps(jdata), 
         headers={'content-type': 'application/json'})
