@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.0.6'
+version = '0.0.7'
 
 setup(name='lytics',
       version=version,
@@ -13,7 +13,7 @@ Lytics.io CLI Tools
 
 `Lytics.io <http://lytics.io>`_ is an analytics service.  This tool provides
 command line access to uploading data, syncing queries, etc.   See 
-http://developer.lytics.io
+http://developer.lytics.io/doc#cli
 
 Download and Installation
 -------------------------
@@ -34,7 +34,8 @@ Download and Installation
     author='Aaron Raddon',
     author_email='aaron@lytics.io',
     url='http://github.com/lytics/lyticscli',
-    install_requires=["nose>=0.10.4","requests>=0.10.1","tornado"],
+    install_requires=["nose>=0.10.4","requests>=0.10.1","tornado",
+       "httpie>=0.3","colorama","termcolor"],
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples']),
     include_package_data=True,

@@ -1,137 +1,124 @@
 # -*- coding: utf-8 -*-
-"""
-Command line tool for sending data to Lytics.io.  
-See doc http://developer.lytics.io/doc
-
-
-Data collection
-=======================
-This allows collection of 2 general types of data
-
-1.  Event data:  a user visits, views, clicks etc type data
-
-2.  Entity Data:   Information about a user, company, etc.
-
-example::
-    
-    # start an interactive command line to type in name=value pairs for collection
-    lytics --aid=123456  --key=myapikey collect
-    >myname=value&name2=value2
-
-    # tail a file, sending each new entry written
-    tail -F myfile.log | lytics --aid=123456 --key=mysecret collect
-
-    # write to stdout
-    myscript.py | lytics --aid=123456 --key=mysecret collect
-
-    # read from a database table
-
-"""
 import re, sys, json, datetime, time, random, urllib, os, logging
+from argparse import FileType, OPTIONAL, ZERO_OR_MORE, SUPPRESS
 import requests
-import tornado
 from tornado import database
-from tornado.options import options, define
-from tornado.httpclient import HTTPClient
+from colorama import init as coloramainit
+from termcolor import colored
+import requests
+import requests.auth
 
 import config
 import csvupload
-import qry
+import query
 import db
-
-
-define("api",default="http://api.lytics.io",type=str,help="api url")
-define("key",default="",type=str,help="Lytics.io api access token key for api (mandatory) or use LIOKEY env")
-define("aid",default="",type=str,help="Lytics.io account id (mandatory) or use LIOAID env ")
-define("dbhost",default="localhost",type=str,help="mysql db host")
-define("db",default="test",type=str,help="db name to connect to")
-define("config",default=".lytics",type=str,help="config file")
-define("stream",default="default",type=str,help="Stream to send this data to")
-define("v",default=False,type=bool,help="verbose?")
-
-
-tornado.options.parse_command_line()
-if options.config != "":
-    try:
-        if options.config == ".lytics":
-            conf_file = os.path.expanduser("%s/%s" % (os.getcwd(),options.config))
-            tornado.options.parse_config_file(conf_file)
-        else:
-            tornado.options.parse_config_file(options.config)
-    except:
-        pass
-    tornado.options.parse_command_line()
-
-try:
-    apikey = os.environ["LIOKEY"]
-    if len(apikey) > 0:
-        options.key = apikey
-except:
-    pass
-
-try:
-    aid = os.environ["LIOAID"]
-    if len(aid) > 0:
-        options.aid = aid
-except:
-    pass
-try:
-    apistr = os.environ["LIOAPI"]
-    if len(apistr) > 0:
-        #options.api = "http://localhost:8133"
-        options.api = apistr
-except:
-    pass
-
+import httpiecolor
+import httpapi
+from httpapi import build_url
+from pretty import pprint_table
 
 log = logging.getLogger("lytics")
 APIAGENT = "LioCLI"
 BATCH_SIZE = 50
 
-#console.grab_console()
-config.openConfig()
+coloramainit()
 
+def _(text):
+    """Normalize whitespace."""
+    return ' '.join(text.strip().split())
 
+class LioCommands(object):
 
-class clcmd(object):
+    def __init__(self, args):
+        "init"
+        config.options.load(args)  # config.options = config.LioOptions(args)
+        self.args = args 
 
-    def valid(self):
-        ret = True
-        if len(options.key) < 10:
-            log.error("MUST HAVE KEY key=%s" % (options.key))
-            ret = False
-        elif len(options.api) < 4:
-            log.error("MUST HAVE API api=%s" % (options.api))
-            ret = False
-        #elif len(options.aid) < 1:
-        #    log.error("MUST HAVE AID aid=%s" % (options.aid))
-        #    ret = False
-        return ret
+    def _error(self,msg):
+        print("lytics error:  %s" % msg)
 
-    def help(self):
-        "print help documentation"
-        options.print_help()
-        print __doc__
-        for p in dir(self):
-            if p[:1] != "_":
-                print("%s  %s" % (p,getattr(self,p).__doc__ or ""))
+    def _arg(self,pos):
+        if type(self.args.args) == list:
+            if len(self.args.args) > pos:
+                #log.debug(self.args.args)
+                return self.args.args[pos]
+        return ""
 
-    def http(self,file):
+    def valid(self, argsreq=0):
+        if len(self.args.api) < 2:
+            self._error("Requires Api and is missing")
+            return False
+        if len(self.args.key) < 10:
+            self._error("Requires apikey and is missing")
+            return False
+        if argsreq > 0:
+            if len(self.args.args) < argsreq:
+                return False
+        return True
+
+    def api(self):
+        """call arbitrary api
         """
-        test out the http 
-        """
-        pass 
+        if not self.valid():
+            return
+        url = self._arg(0)
+        if len(url) < 1:
+            log.error("Requires url arg:    lytics api account  [user,account,query,meta etc]")
+            return
+        url = build_url(url)
+        log.debug(url)
+        httpiecolor.console_response(httpapi.doapi(url))
 
-    def syncq(self,file):
+    def user(self):
+        """
+        Get list of Users or a specific one
+        """
+        if not self.valid(1):
+            return
+        method = self._arg(0).lower()
+
+        uid = self._arg(0)
+        url = "" 
+        if len(uid) == 0 :
+            url = build_url("user")
+        else:
+            url = build_url("user/" + uid)
+        log.debug(url)
+        if self.args.format == 'json':
+            httpiecolor.console_response(httpapi.doapi(url))
+        else:
+            resp = httpapi.doapi(url)
+            if resp.status_code < 400:
+                data = json.loads(resp.text)
+                out = [['Name', "Email","Roles"]]
+                if "data" in data:
+                    if isinstance(data["data"],dict):
+                        httpiecolor.console_response(resp)
+                    else:
+                        for u in data["data"]:
+                            roles = ""
+                            if "roles" in u and type(u["roles"]) == list:
+                                roles = ",".join(u['roles'])
+                            out.append([u["name"],u["email"],roles])
+                        print("")
+                        pprint_table(sys.stdout,out)
+
+    def query(self):
         """
         Sync a raw text query file:
 
-            lytics syncq qry.txt
-        """
-        if self.valid():
-            qry.syncq(self, file)
+            lytics query sync < queries.lql 
+            lytics query delete name 
+            lytics query list 
 
-    def csv(self,file):
+        """
+        if not self.valid(1):
+            return
+        method = self._arg(0)
+        if method == "sync":
+            query.sync(self)
+
+    def csv(self):
         """
         Read a csv file and upload to lytics:
 
@@ -140,51 +127,53 @@ class clcmd(object):
             # optional stream name
             lytics --stream=streamName csv file.csv 
         """
-        csvupload.csvupload(self, file)
+        fa = self._arg(0)
+        if len(fa) < 2:
+            log.error("no file supplied")
+        csvupload.csvupload(self, fa)
 
     def showconfig(self):
         "Show the config settings"
-        for n in options:
-            print "%s=%s" % (n,options[n].value())
-
-    def hello(self):
-        print "hello"
-
-    def setconfig(self,name,value):
-        """
-        Set a configuration setting for given parameter:
-
-            lytics setconfig name value
-        """
-        # write out config file
-        config.setConfig(name,value)
+        print(config.options.help())
 
     def sendjson(self,rawdata):
         """
         sends the data to collection servers via http
         """
-        http = HTTPClient()
         url = ""
-        if len(options.aid) > 0:
-            url = options.api +"/c/%s/%s" % (options.aid, options.stream)
-        elif len(options.key) > 0:
-            url = options.api +"/c/%s/%s" % (options.key, options.stream)
-        data = json.dumps(rawdata)
+        aid = self.args.aid 
+        if len(aid) == 0:
+            aid = self.args.key
+        if len(self.args.stream) > 0:
+            url = self.args.api +"/c/%s/%s" % (aid, self.args.stream)
+        else :
+            url = self.args.api +"/c/%s" % (aid)
+
         log.debug(url)
-        #log.debug(data)
-        response = http.fetch(url, 
-            method="POST", body=data, headers={'user-agent':APIAGENT},
-            request_timeout=60,connect_timeout=60)
-        print response
+        if self.args.preview:
+            print("would have sent %s data=\n%s" % (url, rawdata))
+            return 
+        if self.args.format == 'json':
+            httpiecolor.console_response(httpapi.doapi(url, data=rawdata))
+        else:
+            httpiecolor.console_response(httpapi.doapi(url, data=rawdata))
+        #print response
     
-    def db(self,username,pwd=""):
+    def db(self):
         """
         read info from a database table and send to lio.   
 
-        lytics --dbhost=localhost --db=mydbname --aid=123456 --key=mysecret db root rootpwd
+        lytics --dbhost=localhost \
+                --db=mydbname \
+                --dbuser=root \
+                --dbpwd=rootpwd \
+            db upload < upload.sql
         """
-        if self.valid():
-            db.senddb(self,username,pwd)
+        if not self.valid(1):
+            return
+        method = self._arg(0).lower()
+        if method == "upload":
+            db.senddb(self)
     
     def collect(self):
         """posts arbitrary data for collection (json or name/value)
@@ -194,14 +183,16 @@ class clcmd(object):
         tail -F myfile.log | python lytics --aid=123456 --key=mysecret collect
         """
         if len(options.key) < 1 or len(options.aid) < 1:
-            options.print_help()
             raise Error('Aid and key are required')
         #print("""You can start sending data by typing it in, format as QS nv pairs, or valid json""")
         http = HTTPClient()
         jsondata = None
         line = ""
         data = None
-        url = options.api  + "/c/%s/%s?key=%s" % (options.aid, options.stream, options.key)
+        stream = ""
+        if len(options.stream) > 0:
+            stream = "/" + options.stream
+        url = options.api  + "/c/%s%s?key=%s" % (options.aid, stream, options.key)
 
         # for each line from stdin
         while 1:
@@ -232,30 +223,8 @@ class clcmd(object):
             print response.body
     
 
-def main():
-    "Main Entry Point for CLI"
-    args = [a for a in sys.argv if a[0:1] != "-"][1:]
-    cl = clcmd()
-    cmd = "help"
-    
-    if len(args) > 0:
-        cmd = args[0]
-    
-    if len(args) > 2 and hasattr(cl,cmd):
-        getattr(cl,cmd)(args[1],args[2])
-    elif len(args) > 1 and hasattr(cl,cmd):
-        getattr(cl,cmd)(args[1])
-    elif cmd in dir():
-        getattr(cl,cmd)()
-    elif getattr(cl,cmd):
-        getattr(cl,cmd)()
-    else:
-        cl.help()
 
-if __name__ == "__main__":
-    main()
 
-        
 
 
 

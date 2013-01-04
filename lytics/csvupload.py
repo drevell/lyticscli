@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+CSV   [file]    Read a csv file and upload to lytics:
+
+                lytics csv file.csv
+
+                # optional stream name
+                lytics --stream=streamName csv file.csv 
+"""
 import sys, json, datetime, time, urllib, os, logging, csv
 import requests
-from tornado.options import options
+from config import options
 
 
 log = logging.getLogger("lytics")

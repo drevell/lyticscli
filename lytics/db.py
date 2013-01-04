@@ -1,55 +1,36 @@
 # -*- coding: utf-8 -*-
+"""
+
+DB    Operations on local db's to upload/sync data
+----------------------------------------------------
+DB UPLOAD < file.sql # set of sql queries to run against db and upload 
+
+"""
 import sys, json, datetime, time, os, logging
 import requests
-import tornado
-from tornado.options import options
-from tornado.httpclient import HTTPClient
 from tornado import database
 
-import config
+from config import options
+from .input import InputHelper
 
 BATCH_SIZE = 50
 
 log = logging.getLogger("lytics")
 
-def senddb(cli ,username,pwd):
+
+def senddb(cli):
     """
     Sync query from db
     """
-    db = database.Connection(options.dbhost, options.db, user=username, password=pwd)
+
+    ih = InputHelper()
+    ql = ih.parse()
+
+    db = database.Connection(options.dbhost, options.db, user=options.dbuser, password=options.dbpwd)
+
     rows = []
-    queries = []
-    #sql = "SELECT email, id as user_id FROM user"
-    #sql = "SELECT email, id as user_id FROM user where last_update > CURRENT_TIMESTAMP - 10000"
-    # for each line from stdin
-    done = False
-    sqlstr = ''
-    while not done:
-        try:
-            line = sys.stdin.readline()
-        except KeyboardInterrupt:
-            break
-
-        if not line:
-            break
-
-        line = line.strip()
-        #print line
-        if line[:1] == ";":
-            sqlstr = sqlstr + " " + line
-            #print("SQLSTR = %s" % (sqlstr))
-            queries.append(sqlstr)
-            sqlstr = ''
-        elif len(line) > 2:
-            sqlstr += " " + line
-        else:
-            log.debug("ELSE %s" % (line))
-    if len(sqlstr) > 0 :
-        queries.append(sqlstr)
-
-    #print queries
-    for sql in queries:
-        for row in db.query(sql):
+    for query in ql:
+        for row in db.query(query[1]):
             newrow = {}
             for col, colval in row.iteritems():
                 #print col, colval

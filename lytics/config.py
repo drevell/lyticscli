@@ -1,71 +1,74 @@
 # -*- coding: utf-8 -*-
+"""
+This reads/writes a bash compatible .lytics config file to the local 
+directory, which allows settings to be stored persistently, as well
+as allow usage for bash scripts
+"""
 import sys, os, logging
-from tornado.options import options
+import ConfigParser
 
 log = logging.getLogger("lytics")
 
 conf_file = None
 config_lines = []
 
-def setConfig(name,value):
+class LioOptions(object):
+    
+    def load(self,args):
+        self.args = args 
+        getEnv()
+
+    def __getattr__(self,name):
+        if name in self.args:
+            #print("Getattr %s: %s" % (name, getattr(self.args,name)))
+            return getattr(self.args,name)
+        return ""
+
+    def setval(self,name,val):
+        self.args.__setattr__(name,val)
+
+    def help(self):
+        out = """
+        aid=%s
+        key=%s
+        api=%s
+        """ % (self.aid, self.key, self.api)
+        return out
+
+options = LioOptions()
+
+
+def enable_pretty_logging(level):
+    """Turns on pretty logging"""
+    
+    log.setLevel(getattr(logging, level.upper()))
+
+def getEnv():
     """
-    Given a name/value pair, sets or updates in config file 
-    (.lytics of cur dir) as well as (.env of current dir) 
+    Load LIOKEY, LIOAID,LIOAPI env variables if they exist
+
+        LIOKEY = key 
+        LIOAID = aid 
+        LIOAPI = api 
     """
-    lines, found = [], False
-    log.debug("SETCONFIG   %s:%s" %(name,value))
-    def setConfLine():
-        if not name in options:
-            options.print_help()
-            raise Error('Unrecognized command line option: %r' % name)
-        option = options.get(name) #_options[name]
-        if option:
-            option.parse(value)
-            if option.type == str:
-                lines.append(name + '="' + str(value) + '"')
-            elif options.type == bool:
-                val2 = value.lower()
-                if val2 in ['true', '1', 't', 'y', 'yes', 'True']:
-                    lines.append(name + '=True')
-                else:
-                    lines.append(name + '=False')
-
-
-    for line in config_lines:
-        #log.info(line)
-        if len(line) > 1:
-            if line.startswith(name + "="):
-                found = True
-                setConfLine()
-            else:
-                lines.append(line)
-    if not found:
-        setConfLine()
-    f = open(conf_file, 'w')
-    f.write("\n".join(lines))
-    f.close()
-    #log.debug("".join(lines))
-    openConfig()
-
-
-def openConfig(name=".lytics"):
-    global config_lines
-    global conf_file
-    conf_file = os.path.expanduser("%s/%s" % (os.getcwd(),name))
-    #log.debug("opening conf file %s" % conf_file)
     try:
-        config_lines = []
-        f = open(conf_file, 'r')
-        #log.info("OPENED %s for reading" %(conf_file))
-        for line in f:
-            config_lines.append(line)
-        #log.debug("".join(config_lines))
-        f.close()
-    except Exception, e:
-        f = open(conf_file, 'w')
-        config_lines = ["#Lytics Config File"]
-        f.write("#Lytics Config File")
-        f.close()
-        log.error("Creating Config file %s" % (conf_file))
-
+        apikey = os.environ["LIOKEY"]
+        if len(apikey) > 0:
+            options.args.key = apikey
+    except:
+        pass
+    try:
+        aid = os.environ["LIOAID"]
+        if len(aid) > 0:
+            options.args.aid = aid
+    except:
+        pass
+    try:
+        apistr = os.environ["LIOAPI"]
+        if len(apistr) > 0:
+            if not "http" in apistr:
+                apistr = "http://" + apistr
+            options.setval("api", apistr)
+    except Exception as e:
+        pass
 
