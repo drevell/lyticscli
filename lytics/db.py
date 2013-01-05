@@ -3,7 +3,13 @@
 
 DB    Operations on local db's to upload/sync data
 ----------------------------------------------------
-DB UPLOAD < file.sql # set of sql queries to run against db and upload 
+DB [OPTIONS] UPLOAD < file.sql # set of sql queries to run against db and upload 
+
+lytics --dbhost=localhost \\
+                --db=mydbname \\
+                --dbuser=root \\
+                --dbpwd=rootpwd \\
+            db upload < upload.sql
 
 """
 import sys, json, datetime, time, os, logging

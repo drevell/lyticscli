@@ -8,6 +8,7 @@ METHODS
 import signal, logging 
 
 __version__ = '0.0.7'
+APIAGENT = "Lytics CLI %s" % __version__
 
 _signames = dict((getattr(signal, signame), signame) \
                     for signame in dir(signal) \

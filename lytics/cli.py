@@ -13,15 +13,9 @@ from argparse import FileType, OPTIONAL, ZERO_OR_MORE, SUPPRESS
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 #from .lio import main
-from .lio import LioCommands, _
+from .lio import LioCommands, _, get_doc
 from .config import enable_pretty_logging
-import query 
-import db 
-import csvupload 
-import httpapi
 
-modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi}
-module_keys = ["query","db","csv", "api"]
 
 logging.basicConfig()
 
@@ -50,14 +44,7 @@ class Parser(ArgumentParser):
         return args
 
 
-def get_doc(method=None):
-    "Get doc for a specific module or all"
-    if not method:
-        return '\n'.join([modules[n].__doc__ for n in module_keys])
-    else:
-        if method in modules:
-            return modules[method].__doc__.strip()
-    return ""
+
 
 
 parser = Parser(
@@ -220,11 +207,10 @@ def main(sysargs=sys.argv[1:]):
     try:
         args = parser.parse_args(args=sysargs)
         cl = LioCommands(args)
-        method = ""
-        if len(args.method) == 1:
-            method = args.method[0].lower()
+        method = cl.args.method
         
-        log.debug("METHOD = %s  ARGS=[%s]" % (method, args.args))
+        
+        log.debug("METHOD = %s  ARGS=%s" % (method, args.args))
         if not hasattr(cl,method):
             parser.print_help()
         else:

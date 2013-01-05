@@ -14,8 +14,6 @@ from tornado.httpclient import HTTPClient
 from colorama import init as coloramainit
 from termcolor import colored
 
-
-#import config
 from config import options
 from .input import InputHelper
 
@@ -62,4 +60,20 @@ def sync(cli):
             raise
         log.error(e)
         
+
+
+def list(cli):
+    "Lists queries"
+    url = '%s/api/query?key=%s' % (options.api, options.key)
+    r = requests.get(url)
+    if r.status_code < 400:
+        data = json.loads(r.text)
+        if 'data' in data and "queries" in data['data']:
+            for qry in data["data"]['queries']:
+                print colored(qry['peg'] + "\n\n", 'green')
+    else:
+        print url
+        print("ERROR %s" % (r.text))
+
+
 

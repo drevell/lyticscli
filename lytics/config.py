@@ -15,6 +15,8 @@ config_lines = []
 class LioOptions(object):
     
     def load(self,args):
+        if type(args.method) == list and len(args.method) == 1:
+            args.method = args.method[0].lower()
         self.args = args 
         getEnv()
 

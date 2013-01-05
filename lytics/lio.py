@@ -1,27 +1,52 @@
 # -*- coding: utf-8 -*-
-import re, sys, json, datetime, time, random, urllib, os, logging
-from argparse import FileType, OPTIONAL, ZERO_OR_MORE, SUPPRESS
+import sys
+import json
+import datetime
+import time 
+import random
+import urllib
+import os 
+import logging
+#from argparse import FileType, OPTIONAL, ZERO_OR_MORE, SUPPRESS
 import requests
-from tornado import database
 from colorama import init as coloramainit
 from termcolor import colored
-import requests
-import requests.auth
 
 import config
 import csvupload
 import query
 import db
-import httpiecolor
+import collect 
 import httpapi
+
+import httpiecolor
 from httpapi import build_url
 from pretty import pprint_table
+
 
 log = logging.getLogger("lytics")
 APIAGENT = "LioCLI"
 BATCH_SIZE = 50
 
 coloramainit()
+
+modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi,"collect":collect}
+#module_keys = ["query","db","csv", "api","collect"]
+
+
+def get_doc(method=None):
+    "Get doc for a specific module or all"
+    if not method:
+        return '\n'.join([modules[n].__doc__ for n in module_keys])
+    else:
+        if type(method) == list:
+            if len(method) == 1:
+                method = method[0]
+            else:
+                method = "invalid"
+        if method in modules:
+            return modules[method].__doc__.strip()
+    return ""
 
 def _(text):
     """Normalize whitespace."""
@@ -53,6 +78,9 @@ class LioCommands(object):
             return False
         if argsreq > 0:
             if len(self.args.args) < argsreq:
+                doc = get_doc(self.args.method)
+                self._error("%s requires additional arg and is missing\n\n%s" % (
+                    self.args.method, doc))
                 return False
         return True
 
@@ -104,19 +132,14 @@ class LioCommands(object):
                         pprint_table(sys.stdout,out)
 
     def query(self):
-        """
-        Sync a raw text query file:
-
-            lytics query sync < queries.lql 
-            lytics query delete name 
-            lytics query list 
-
-        """
+        """Query Ops"""
         if not self.valid(1):
             return
         method = self._arg(0)
         if method == "sync":
             query.sync(self)
+        elif method == "list":
+            query.list(self)
 
     def csv(self):
         """
@@ -162,12 +185,6 @@ class LioCommands(object):
     def db(self):
         """
         read info from a database table and send to lio.   
-
-        lytics --dbhost=localhost \
-                --db=mydbname \
-                --dbuser=root \
-                --dbpwd=rootpwd \
-            db upload < upload.sql
         """
         if not self.valid(1):
             return
@@ -176,51 +193,10 @@ class LioCommands(object):
             db.senddb(self)
     
     def collect(self):
-        """posts arbitrary data for collection (json or name/value)
-
-        open this as a process in your app and start writing to it using stdout
-
-        tail -F myfile.log | python lytics --aid=123456 --key=mysecret collect
-        """
-        if len(options.key) < 1 or len(options.aid) < 1:
-            raise Error('Aid and key are required')
-        #print("""You can start sending data by typing it in, format as QS nv pairs, or valid json""")
-        http = HTTPClient()
-        jsondata = None
-        line = ""
-        data = None
-        stream = ""
-        if len(options.stream) > 0:
-            stream = "/" + options.stream
-        url = options.api  + "/c/%s%s?key=%s" % (options.aid, stream, options.key)
-
-        # for each line from stdin
-        while 1:
-            try:
-                line = sys.stdin.readline()
-            except KeyboardInterrupt:
-                break
-
-            if not line:
-                break
-
-            jsondata = None
-            line = line.strip()
-            if line[:1] == "{":
-                line = "[" + line + "]"
-            if line[:1] == "[":
-                #jsondata = json.loads(line)
-                #data = urllib.urlencode(jsondata)
-                data = line
-            else:
-                data = line
-                url = options.api + "/c/%s/%s?key=" % (options.aid,options.stream)
-            
-            log.debug("SENDING '%s'" % (data))
-            response = http.fetch(url, 
-                method="POST", body=data, headers={'user-agent':APIAGENT},
-                request_timeout=60,connect_timeout=60)
-            print response.body
+        """posts arbitrary data for collection"""
+        if not self.valid(0):
+            return
+        collect.stdin(self)
     
 
 
