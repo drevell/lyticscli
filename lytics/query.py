@@ -34,7 +34,7 @@ def sync(cli):
         return
     payload = []
     for q in ql:
-        payload.append({'peg': q, "idx":0})
+        payload.append({'peg': q[0] + q[1], "idx":0})
         #log.info(q)
 
     url = '%s/api/query?key=%s' % (options.api, options.key)

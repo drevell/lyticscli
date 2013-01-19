@@ -1,6 +1,23 @@
 # -*- coding: utf-8 -*-
 import sys, os, logging
 
+class ReadLineIterator(object):
+    """
+    An iterator that calls readline() to get its next value.
+    """
+    def __init__(self, f): 
+        self.f = f
+
+    def __iter__(self): 
+        return self
+
+    def next(self):
+        line = self.f.readline()
+        if line: 
+            return line
+        else: 
+            raise StopIteration
+
 
 class InputHelper(object):
     "Stdin iterator for parsing contents"
@@ -43,9 +60,7 @@ class InputHelper(object):
             elif len(line) > 1 and line[0:2] == "--":
                 inComment = False
                 comment += line
-            elif len(line) > 1 and inComment:
-                comment += line
-            elif len(line) == 0 and inComment:
+            elif inComment:
                 comment += line
             elif len(line) > 1:
                 txt += line
@@ -54,6 +69,7 @@ class InputHelper(object):
                 handle_row()
                 txt = ""
                 comment = ""
+            #print(comment)
 
         handle_row()
 

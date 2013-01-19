@@ -27,3 +27,9 @@ pip-log.txt
 .mr.developer.cfg
 
 .lytics
+
+AARON
+TODO-LYTICSCLI
+dev.conf
+nose.cfg
+trash/

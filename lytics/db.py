@@ -16,10 +16,9 @@ import sys, json, datetime, time, os, logging
 import requests
 from tornado import database
 
-from config import options
+from config import options, BATCH_SIZE
 from .input import InputHelper
 
-BATCH_SIZE = 50
 
 log = logging.getLogger("lytics")
 
@@ -49,6 +48,7 @@ def senddb(cli):
             rows.append(newrow)
             if len(rows) > BATCH_SIZE :
                 cli.sendjson(rows)
+                rows = []
     
     if len(rows) > 0 :
         cli.sendjson(rows)

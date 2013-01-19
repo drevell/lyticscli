@@ -11,6 +11,8 @@ log = logging.getLogger("lytics")
 
 conf_file = None
 config_lines = []
+BATCH_SIZE = 50
+
 
 class LioOptions(object):
     

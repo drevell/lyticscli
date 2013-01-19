@@ -2,11 +2,6 @@
 """
 API   [method]  Perform an arbitrary http api call
 
-USER  [id]      Get list (or for given id) user
-                usage:
-
-                    lytics user name@email
-                    lytics user
 """
 import requests
 import json

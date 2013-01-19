@@ -18,6 +18,7 @@ import query
 import db
 import collect 
 import httpapi
+import users 
 
 import httpiecolor
 from httpapi import build_url
@@ -30,14 +31,15 @@ BATCH_SIZE = 50
 
 coloramainit()
 
-modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi,"collect":collect}
-#module_keys = ["query","db","csv", "api","collect"]
+modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi,
+    "collect":collect,"users":users}
+
 
 
 def get_doc(method=None):
     "Get doc for a specific module or all"
     if not method:
-        return '\n'.join([modules[n].__doc__ for n in module_keys])
+        return '\n'.join([modules[n].__doc__ for n in modules.keys()])
     else:
         if type(method) == list:
             if len(method) == 1:
@@ -101,35 +103,14 @@ class LioCommands(object):
         """
         Get list of Users or a specific one
         """
-        if not self.valid(1):
+        if not self.valid(0):
             return
         method = self._arg(0).lower()
 
-        uid = self._arg(0)
-        url = "" 
-        if len(uid) == 0 :
-            url = build_url("user")
-        else:
-            url = build_url("user/" + uid)
-        log.debug(url)
-        if self.args.format == 'json':
-            httpiecolor.console_response(httpapi.doapi(url))
-        else:
-            resp = httpapi.doapi(url)
-            if resp.status_code < 400:
-                data = json.loads(resp.text)
-                out = [['Name', "Email","Roles"]]
-                if "data" in data:
-                    if isinstance(data["data"],dict):
-                        httpiecolor.console_response(resp)
-                    else:
-                        for u in data["data"]:
-                            roles = ""
-                            if "roles" in u and type(u["roles"]) == list:
-                                roles = ",".join(u['roles'])
-                            out.append([u["name"],u["email"],roles])
-                        print("")
-                        pprint_table(sys.stdout,out)
+        if method == "list" or method == "":
+            users.list(self)
+        elif method == "create":
+            users.create(self)
 
     def query(self):
         """Query Ops"""
@@ -150,10 +131,9 @@ class LioCommands(object):
             # optional stream name
             lytics --stream=streamName csv file.csv 
         """
-        fa = self._arg(0)
-        if len(fa) < 2:
-            log.error("no file supplied")
-        csvupload.csvupload(self, fa)
+        if not self.valid(0):
+            return
+        csvupload.csvupload(self)
 
     def showconfig(self):
         "Show the config settings"
@@ -163,15 +143,17 @@ class LioCommands(object):
         """
         sends the data to collection servers via http
         """
-        url = ""
+        log.debug(rawdata)
+        
         aid = self.args.aid 
         if len(aid) == 0:
             aid = self.args.key
+
+        url = self.args.api +"/c/%s" % (aid)
         if len(self.args.stream) > 0:
             url = self.args.api +"/c/%s/%s" % (aid, self.args.stream)
-        else :
-            url = self.args.api +"/c/%s" % (aid)
 
+        print(url)
         log.debug(url)
         if self.args.preview:
             print("would have sent %s data=\n%s" % (url, rawdata))

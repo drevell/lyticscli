@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.0.7'
+version = '0.0.9'
 
 setup(name='lytics',
       version=version,
@@ -34,12 +34,10 @@ Download and Installation
     author='Aaron Raddon',
     author_email='aaron@lytics.io',
     url='http://github.com/lytics/lyticscli',
-    install_requires=["nose>=0.10.4","requests>=0.10.1","tornado",
-       "httpie>=0.3","colorama","termcolor"],
+    install_requires=["tornado","httpie>=0.3.1","colorama","termcolor"],
     license='MIT',
-    packages=find_packages(exclude=['ez_setup', 'examples']),
+    packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
-    test_suite='nose.collector',
     zip_safe=False,
     entry_points={
         'console_scripts': [
