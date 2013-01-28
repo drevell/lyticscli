@@ -19,6 +19,7 @@ import db
 import collect 
 import httpapi
 import users 
+import account 
 
 import httpiecolor
 from httpapi import build_url
@@ -32,7 +33,7 @@ BATCH_SIZE = 50
 coloramainit()
 
 modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi,
-    "collect":collect,"users":users}
+    "collect":collect,"users":users, "account":account}
 
 
 
@@ -112,6 +113,20 @@ class LioCommands(object):
         elif method == "create":
             users.create(self)
 
+    def account(self):
+        """
+        actions for account
+        """
+        if not self.valid(0):
+            return
+        method = self._arg(0).lower()
+
+        if method == "list" or method == "":
+            account.list(self)
+        elif method == "create":
+            account.create(self)
+
+
     def query(self):
         """Query Ops"""
         if not self.valid(1):
@@ -135,7 +150,7 @@ class LioCommands(object):
             return
         csvupload.csvupload(self)
 
-    def showconfig(self):
+    def env(self):
         "Show the config settings"
         print(config.options.help())
 

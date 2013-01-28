@@ -21,7 +21,7 @@ log = logging.getLogger("lytics")
 
 def sync(cli):
     """
-    Sync queries up, those that are kept in raw text files of .lql type 
+    Sync queries to lytics api from raw text files of .lql type 
     It assumes each query is seperated by at least one blank line
     """
     ih = InputHelper()

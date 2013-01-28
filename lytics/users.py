@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+
 USER            Administrative User management 
+----------------------------------------------------
 usage:
 
                 lytics user name@email
@@ -31,12 +33,20 @@ def create(cli):
     """
     url = build_url("user")
     user = {}
-    user['email'] = raw_input('What is their email (username): ')
+    user['email'] = raw_input('What is their email: ')
     user['name'] = raw_input('What is their full name?: ')
     auth = raw_input('How will they logon?  [google,github,password] (deafult = google): ')
     if auth == "google" or auth == "":
         pass
-    elif auth == "password":
+    if auth == "google":
+        needsEmail = False
+        if "email" not in user:
+            needsEmail = True
+        elif len(user["email"]) < 4:
+            needsEmail = True
+        if needsEmail:
+            user['email'] =raw_input("To use google login requires google email: ")
+    if auth == "password":
         user['password'] = raw_input('Password? ')
     if cli.args.preview:
         print("would have sent %s data=\n%s" % (url, user))
