@@ -26,18 +26,22 @@ def sync(cli):
     """
     ih = InputHelper()
     ql = ih.parse()
-    log.debug("Syncing %s Queries " % len(ql))
+    url = '%s/api/query?key=%s%s' % (options.api, options.key, ih.qs)
+
+    log.debug("Syncing %s Queries " % (len(ql)))
     
     if options.preview:
+        log.warn("would have sent %s" % (url))
         for q in ql:
             print(q[0] + "\n" + q[1])
         return
+
     payload = []
     for q in ql:
         payload.append({'peg': q[0] + q[1], "idx":0})
         #log.info(q)
 
-    url = '%s/api/query?key=%s' % (options.api, options.key)
+    
     log.warn("connecting to %s" % (url))
     headers = {'content-type': 'application/json'}
     r = requests.post(url, data=json.dumps(payload), headers=headers)

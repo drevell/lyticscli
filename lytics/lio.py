@@ -15,7 +15,6 @@ from termcolor import colored
 import config
 import csvupload
 import query
-import db
 import collect 
 import httpapi
 import users 
@@ -32,7 +31,7 @@ BATCH_SIZE = 50
 
 coloramainit()
 
-modules = {"query":query,"db":db,"csv":csvupload,"api":httpapi,
+modules = {"query":query,"csv":csvupload,"api":httpapi,
     "collect":collect,"users":users, "account":account}
 
 
@@ -154,12 +153,11 @@ class LioCommands(object):
         "Show the config settings"
         print(config.options.help())
 
-    def sendjson(self,rawdata):
+    def sendjson(self,rawdata, method="GET"):
         """
         sends the data to collection servers via http
         """
-        log.debug(rawdata)
-        
+        #log.debug("HERE %s" % rawdata)
         aid = self.args.aid 
         if len(aid) == 0:
             aid = self.args.key
@@ -168,26 +166,15 @@ class LioCommands(object):
         if len(self.args.stream) > 0:
             url = self.args.api +"/c/%s/%s" % (aid, self.args.stream)
 
-        print(url)
-        log.debug(url)
+        log.debug("URL1  method=%s  url==%s" % (method, url))
         if self.args.preview:
             print("would have sent %s data=\n%s" % (url, rawdata))
             return 
         if self.args.format == 'json':
-            httpiecolor.console_response(httpapi.doapi(url, data=rawdata))
+            httpiecolor.console_response(httpapi.doapi(url, data=rawdata, method=method))
         else:
-            httpiecolor.console_response(httpapi.doapi(url, data=rawdata))
+            httpiecolor.console_response(httpapi.doapi(url, data=rawdata, method=method))
         #print response
-    
-    def db(self):
-        """
-        read info from a database table and send to lio.   
-        """
-        if not self.valid(1):
-            return
-        method = self._arg(0).lower()
-        if method == "upload":
-            db.senddb(self)
     
     def collect(self):
         """posts arbitrary data for collection"""

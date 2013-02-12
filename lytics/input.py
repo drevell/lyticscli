@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-import sys, os, logging
+import sys
+import os
+import logging
+
+log = logging.getLogger("lytics")
 
 class ReadLineIterator(object):
     """
@@ -22,12 +26,13 @@ class ReadLineIterator(object):
 class InputHelper(object):
     "Stdin iterator for parsing contents"
     def __init__(self,*args,**kwargs):
-        pass
+        self.qs = ""
 
     def parse(self,cb=None):
         """
         Parse input into seperate entities defined by new lines
         """
+        firstLine = True 
         ql = []
         txt = ""
         comment = ""
@@ -46,6 +51,15 @@ class InputHelper(object):
 
             if not line:
                 break
+
+            # first line allows for querystring type params
+            if firstLine:
+                firstLine = False
+                if "args?" in line:
+                    qs = line[line.index("?")+1:]
+                    if len(qs) > 0:
+                        self.qs = "&" + qs
+                    continue 
 
             #line = line.strip()
             #print("comment='%s' txt='%s'" % (comment,txt))
