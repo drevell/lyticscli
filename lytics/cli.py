@@ -223,8 +223,6 @@ def main(sysargs=sys.argv[1:]):
     except Exception as e:
         if traceback:
             raise
-        else:
-            print("WTF")
         error('%s: %s', type(e).__name__, str(e))
 
 

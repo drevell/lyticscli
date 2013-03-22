@@ -77,7 +77,11 @@ class InputHelper(object):
             elif inComment:
                 comment += line
             elif len(line) > 1:
-                txt += line
+                parts = line.split("#")
+                if len(parts) > 1:
+                    txt += parts[0]
+                else:
+                    txt += line
             else:
                 # empty line is a seperator, mark as new query
                 handle_row()

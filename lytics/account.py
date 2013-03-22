@@ -56,12 +56,12 @@ def list(cli):
         resp = httpapi.doapi(url)
         if resp.status_code < 400:
             data = json.loads(resp.text)
-            out = [['Name', "YourId","apikey"]]
+            out = [['Name', "YourId","Account ID","apikey"]]
             if "data" in data:
                 if isinstance(data["data"],dict):
                     httpiecolor.console_response(resp)
                 else:
                     for u in data["data"]:
-                        out.append([u["name"],u["fid"],u["apikey"]])
+                        out.append([u["name"],u["fid"],u["aid"],u["apikey"]])
                     print("")
                     pprint_table(sys.stdout,out)
