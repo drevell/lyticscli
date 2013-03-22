@@ -15,7 +15,7 @@ from pygments import __version__ as pygments_version
 from httpie.cli import parser
 from httpie.client import get_response
 from httpie.models import Environment
-from httpie.output import output_stream, write, write_with_colors_win_p3k
+from httpie.output import build_output_stream, write, write_with_colors_win_p3k
 
 
 log = logging.getLogger("lytics")
@@ -32,7 +32,7 @@ def console_response(response):
     args = parser.parse_args(args=args, env=env)
 
     write_kwargs = {
-        'stream': output_stream(args, env,
+        'stream': build_output_stream(args, env,
                                       response.request,
                                       response),
         'outfile': env.stdout,
