@@ -35,7 +35,7 @@ def create(cli):
     user = {}
     user['email'] = raw_input('What is their email: ')
     user['name'] = raw_input('What is their full name?: ')
-    auth = raw_input('How will they logon?  [google,github,password] (deafult = google): ')
+    auth = raw_input('How will they logon?  [google,github,password] (default = google): ')
     if auth == "google" or auth == "":
         pass
     if auth == "google":

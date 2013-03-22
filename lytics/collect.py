@@ -3,7 +3,15 @@
 
 COLLECT    collect data and send to lytics
 ----------------------------------------------------
+usage:
+    
+    # pipe data to collector via stdout
+    myyapp > lytics collect 
 
+    # read data from stdin 
+    lytics collect   
+
+    lytics collect < /path/to/file.json 
 
 
 """

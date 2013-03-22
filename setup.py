@@ -34,7 +34,7 @@ Download and Installation
     author='Aaron Raddon',
     author_email='aaron@lytics.io',
     url='http://github.com/lytics/lyticscli',
-    install_requires=["tornado","httpie==0.4.1","colorama","termcolor"],
+    install_requires=["tornado","httpie>=0.4.1","colorama","termcolor"],
     license='MIT',
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,

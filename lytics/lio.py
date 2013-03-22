@@ -38,6 +38,10 @@ modules = {"query":query,"csv":csvupload,"api":httpapi,
 
 def get_doc(method=None):
     "Get doc for a specific module or all"
+    args = [arg for arg in sys.argv[1:] if arg not in ["--help","help"]]
+    if len(args) == 1:
+        method = args[0]
+    #print("IN GET_DOC method=%s args=%s" %(method, args))
     if not method:
         return '\n'.join([modules[n].__doc__ for n in modules.keys()])
     else:
@@ -139,11 +143,6 @@ class LioCommands(object):
     def csv(self):
         """
         Read a csv file and upload to lytics:
-
-            lytics csv file.csv
-
-            # optional stream name
-            lytics --stream=streamName csv file.csv 
         """
         if not self.valid(0):
             return
