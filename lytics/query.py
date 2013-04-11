@@ -4,7 +4,7 @@ QUERY    Operations on queries
 ----------------------------------------
 QUERY LIST 
 QUERY SYNC < file.lql    # sync lql formated file
-QUERY DELETE name 
+QUERY DELETE alias
 
 """
 import sys, json, datetime, time, os, logging
@@ -38,7 +38,7 @@ def sync(cli):
 
     payload = []
     for q in ql:
-        payload.append({'peg': q[0] + q[1], "idx":0})
+        payload.append(q[0] + q[1])
         #log.info(q)
 
     
@@ -53,10 +53,10 @@ def sync(cli):
             for qry in jsdata['data']:
                 if "status" in qry and qry['status'] == "error":
                     errors.append(qry)
-                elif 'peg' in qry:
-                    print colored(qry['peg'] + "\n\n", 'green')
+                elif 'text' in qry:
+                    print colored(qry['text'] + "\n\n", 'green')
             for err in errors:
-                print colored("FAILED TO PARSE\n" + qry['peg'] + "\n\n", 'red')
+                print colored("FAILED TO PARSE\n" + qry['text'] + "\n\n", 'red')
         else:
             print(json.dumps(jsdata, sort_keys=True, indent=2))
     except Exception, e:
@@ -72,9 +72,9 @@ def list(cli):
     r = requests.get(url)
     if r.status_code < 400:
         data = json.loads(r.text)
-        if 'data' in data and "queries" in data['data']:
-            for qry in data["data"]['queries']:
-                print colored(qry['peg'] + "\n\n", 'green')
+        if 'data' in data:
+            for qry in data["data"]:
+                print colored(qry['text'] + "\n\n", 'green')
     else:
         print url
         print("ERROR %s" % (r.text))
