@@ -15,7 +15,7 @@ from pygments import __version__ as pygments_version
 from httpie.cli import parser
 from httpie.client import get_response
 from httpie.models import Environment
-from httpie.output import build_output_stream, write, write_with_colors_win_p3k
+from httpie.output import build_output_stream, write, write_with_colors_win_py3
 
 
 log = logging.getLogger("lytics")
@@ -40,7 +40,7 @@ def console_response(response):
     }
     try:
         if env.is_windows and is_py3:
-            write_with_colors_win_p3k(**write_kwargs)
+            write_with_colors_win_py3(**write_kwargs)
         else:
             write(**write_kwargs)
 

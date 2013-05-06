@@ -76,6 +76,10 @@ class LioCommands(object):
         return ""
 
     def valid(self, argsreq=0):
+        """
+        Is this request valid, check the number of args required
+        as well as API, Auth
+        """
         if len(self.args.api) < 2:
             self._error("Requires Api and is missing")
             return False
@@ -129,16 +133,20 @@ class LioCommands(object):
         elif method == "create":
             account.create(self)
 
-
     def query(self):
-        """Query Ops"""
+        """Query Ops, get, list, upload"""
         if not self.valid(1):
             return
         method = self._arg(0)
         if method == "sync":
-            query.sync(self)
+            folder = self._arg(1)
+            qsargs = self._arg(2)
+            if len(folder) == 0:
+                print("No folder specified, to use current folder use '.'")
+                return
+            query.sync_folder(self,folder,qsargs)
         elif method == "list":
-            query.list(self)
+            query.qry_list(self)
 
     def csv(self):
         """
