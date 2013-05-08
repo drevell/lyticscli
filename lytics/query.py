@@ -31,6 +31,7 @@ def upload_query(qrytext,qsargs=""):
 
     log.debug("connecting to %s" % (url))
     headers = {'content-type': 'application/json'}
+    log.debug("uploading qrytext = %s" %(qrytext))
     r = requests.post(url, data=qrytext, headers=headers)
     try:
         if r.status_code > 399:
@@ -63,11 +64,13 @@ def sync_folder(cli,folder="",qsargs=""):
     folder = "%s/%s" % (cwd,folder)
     #print folder
     onlyfiles = [ f for f in os.listdir(folder) if isfile(join(folder,f)) ]
-    for f in onlyfiles:
-        with open(f, 'r') as qf:
-            data = qf.read()
-            print data
-            upload_query(data,qsargs)
+    for fileName in onlyfiles:
+        if '.lql' in fileName:
+            filepath = "%s/%s" % (folder, fileName)
+            with open(filepath, 'r') as qf:
+                data = qf.read()
+                upload_query(data,qsargs)
+    
 
 def sync_file(cli):
     """
