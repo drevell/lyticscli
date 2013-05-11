@@ -8,7 +8,7 @@ query sync ~/myfolder/
 QUERY DELETE name 
 
 """
-import sys, json, datetime, time, os, logging
+import sys, json, datetime, time, os, logging, errno
 import requests
 from os.path import isfile, join
 import tornado
@@ -36,6 +36,7 @@ def upload_query(qrytext,qsargs=""):
     try:
         if r.status_code > 399:
             log.error("Could not complete request %s", r.text)
+            sys.exit(1)
             return
         jsdata = json.loads(r.text)
         errors = []
@@ -55,6 +56,7 @@ def upload_query(qrytext,qsargs=""):
         if options.traceback:
             raise
         log.error(e)
+        sys.exit(1)
 
 def sync_folder(cli,folder="",qsargs=""):
     """
