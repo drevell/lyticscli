@@ -2,10 +2,12 @@
 """
 QUERY    Operations on queries
 ----------------------------------------
-QUERY LIST 
-QUERY SYNC .   # 
+query LIST 
+query sync .   
 query sync ~/myfolder/  
-QUERY DELETE name 
+query upload myfile.lql 
+query upload myfile.lql  disabled=true
+query delete name 
 
 """
 import sys, json, datetime, time, os, logging, errno
@@ -72,6 +74,18 @@ def sync_folder(cli,folder="",qsargs=""):
             with open(filepath, 'r') as qf:
                 data = qf.read()
                 upload_query(data,qsargs)
+    
+def upload(cli,fileName="",qsargs=""):
+    """
+    Sync file lql to api, file must have .lql 
+    """
+    cwd = os.getcwd()
+    filePath = "%s/%s" % (cwd,fileName)
+    #print folder
+    if isfile(filePath) and '.lql' in fileName:
+        with open(filePath, 'r') as qf:
+            data = qf.read()
+            upload_query(data,qsargs)
     
 
 def sync_file(cli):

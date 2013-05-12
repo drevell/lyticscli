@@ -145,6 +145,15 @@ class LioCommands(object):
                 print("No folder specified, to use current folder use '.'")
                 return
             query.sync_folder(self,folder,qsargs)
+        
+        elif method == "upload":
+            fileName = self._arg(1)
+            qsargs = self._arg(2)
+            if len(fileName) == 0:
+                print("No file specified, pass a file name (in current dir) myfile.lql ")
+                return
+            query.upload(self,folder,qsargs)
+
         elif method == "list":
             query.qry_list(self)
 
